@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn as nn
 from datetime import datetime
 
 from caption_utils import *
@@ -38,9 +39,9 @@ class Experiment(object):
         # Init Model
         self.__model = get_model(config_data, self.__vocab)
 
-        # TODO: Set these Criterion and Optimizers Correctly
-        self.__criterion = None
-        self.__optimizer = None
+        # Criterion and Optimizers set 
+        self.__criterion = nn.CrossEntropyLoss()
+        self.__optimizer = torch.optim.Adam(self.__model.parameters(), lr=0.001)
 
         self.__init_model()
 
