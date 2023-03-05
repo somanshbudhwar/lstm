@@ -1,3 +1,10 @@
+# Usage
+
+```
+python -m venv venv
+pip install -r requirements.txt
+```
+
 # Image Captioning
 
 * TODO: Details specific to the student's implementation to be added by the student 
