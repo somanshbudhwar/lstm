@@ -47,6 +47,7 @@ class Experiment(object):
 
         # Load Experiment Data if available
         self.__load_experiment()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Loads the experiment data if exists to resume training from last saved checkpoint.
     def __load_experiment(self):
@@ -81,15 +82,28 @@ class Experiment(object):
             self.__log_epoch_stats(start_time)
             self.__save_model()
 
-    # TODO: Perform one training iteration on the whole dataset and return loss value
     def __train(self):
         self.__model.train()
         training_loss = 0
 
         # Iterate over the data, implement the training function
         for i, (images, captions, _) in enumerate(self.__train_loader):
-            raise NotImplementedError()
+            self.__optimizer.zero_grad()
+            images = images.to(self.device)
+            captions = captions.to(self.device)
 
+            outputs = self.__model(images, captions)
+
+            loss = self.__criterion(outputs, captions) # is this correct...?
+
+            loss.backward()
+            self.__optimizer.step()
+
+            training_loss += loss.item()
+            # TODO analytics reporting + graphing
+
+        # avg training loss
+        training_loss /= len(self.__train_loader)
         return training_loss
 
     # TODO: Perform one Pass on the validation set and return loss value. You may also update your best model here.
@@ -99,8 +113,16 @@ class Experiment(object):
 
         with torch.no_grad():
             for i, (images, captions, _) in enumerate(self.__val_loader):
-                raise NotImplementedError()
+                images = images.to(self.device)
+                captions = captions.to(self.device)
 
+                outputs = self.__model(images, captions)
+
+                loss = self.__criterion(outputs, captions)  # is this correct...?
+                # TODO analytics reporting + graphing
+
+                val_loss += loss.item()
+        val_loss /= len(self.__val_loader)
         return val_loss
 
     # TODO: Implement your test function here. Generate sample captions and evaluate loss and
