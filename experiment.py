@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from datetime import datetime
 
+import caption_utils
 from caption_utils import *
 from constants import ROOT_STATS_DIR
 from dataset_factory import get_datasets
@@ -88,8 +89,10 @@ class Experiment(object):
 
         # Iterate over the data, implement the training function
         for i, (images, captions, _) in enumerate(self.__train_loader):
-            raise NotImplementedError()
-
+            outputs = self.__model.forward(images, captions)
+            loss = self.__criterion(outputs, captions)
+            training_loss = training_loss + loss
+            loss.backward()
         return training_loss
 
     # TODO: Perform one Pass on the validation set and return loss value. You may also update your best model here.
@@ -99,8 +102,9 @@ class Experiment(object):
 
         with torch.no_grad():
             for i, (images, captions, _) in enumerate(self.__val_loader):
-                raise NotImplementedError()
-
+                output = self.__model.forward(images, captions)
+                loss = self.__criterion(output, captions)
+                val_loss = val_loss + loss
         return val_loss
 
     # TODO: Implement your test function here. Generate sample captions and evaluate loss and
@@ -114,7 +118,11 @@ class Experiment(object):
 
         with torch.no_grad():
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
-                raise NotImplementedError()
+                output = self.__model.forward(images, captions)
+                loss = self.__criterion(output, captions)
+                test_loss = test_loss + loss
+                bleu1 = bleu1 + caption_utils.bleu1(output, captions)
+                bleu4 = bleu4 + caption_utils.bleu4(output, captions)
 
         result_str = "Test Performance: Loss: {}, Perplexity: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
                                                                                                bleu1,
