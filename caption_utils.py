@@ -1,3 +1,4 @@
+import torch
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 
 
@@ -7,6 +8,12 @@ from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 # Predicted Caption is the string caption based on your model's output - list(str)
 # Make sure to process your captions before evaluating bleu scores -
 # Converting to lower case, Removing tokens like <start>, <end>, padding etc.
+
+# For both of these functions, reference and predicted captions
+# should come in the form an array of language tokens. ie:
+# hypothesis = ['my', 'name', 'jeff']
+# reference = ['my', 'name', 'is', 'jeff']
+# score = bleu1(reference, hypothesis)
 
 def bleu1(reference_captions, predicted_caption):
     return 100 * sentence_bleu(reference_captions, predicted_caption,

@@ -42,11 +42,12 @@ class Experiment(object):
         # Criterion and Optimizers set 
         self.__criterion = nn.CrossEntropyLoss()
         self.__optimizer = torch.optim.Adam(self.__model.parameters(), lr=0.001)
+        # TODO learning rate scheduler??
 
         self.__init_model()
 
         # Load Experiment Data if available
-        self.__load_experiment()
+        # self.__load_experiment()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Loads the experiment data if exists to resume training from last saved checkpoint.
@@ -85,22 +86,24 @@ class Experiment(object):
     def __train(self):
         self.__model.train()
         training_loss = 0
+        print('train start')
 
         # Iterate over the data, implement the training function
         for i, (images, captions, _) in enumerate(self.__train_loader):
             self.__optimizer.zero_grad()
             images = images.to(self.device)
             captions = captions.to(self.device)
-
+            # print(f'images: {images.size()}')
             outputs = self.__model(images, captions)
-
-            loss = self.__criterion(outputs, captions) # is this correct...?
+            # print(f'outputs: {outputs.size()}')
+            # print(f'captions: {captions.size()}')
+            loss = self.__criterion(outputs, captions)
 
             loss.backward()
             self.__optimizer.step()
 
             training_loss += loss.item()
-            # TODO analytics reporting + graphing
+            print(f'iter {i}\tloss {loss.item()}')
 
         # avg training loss
         training_loss /= len(self.__train_loader)
@@ -118,8 +121,7 @@ class Experiment(object):
 
                 outputs = self.__model(images, captions)
 
-                loss = self.__criterion(outputs, captions)  # is this correct...?
-                # TODO analytics reporting + graphing
+                loss = self.__criterion(outputs, captions)
 
                 val_loss += loss.item()
         val_loss /= len(self.__val_loader)

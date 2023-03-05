@@ -7,7 +7,7 @@ from vocab import Vocabulary
 
 
 class Resnet50Encoder(nn.Module):
-    def __init__(self, embedding_size=300, freeze_encoder=True):
+    def __init__(self, embedding_size, freeze_encoder=True):
         self.freeze_encoder = freeze_encoder
         super(Resnet50Encoder, self).__init__()
         resnet = models.resnet50(weights='ResNet50_Weights.DEFAULT')
