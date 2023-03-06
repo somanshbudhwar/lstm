@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
+import nltk.tokenize
 import numpy as np
 import torch
 import torch.nn as nn
 from datetime import datetime
 
+import caption_utils
 from caption_utils import *
 from constants import ROOT_STATS_DIR
 from dataset_factory import get_datasets
@@ -109,7 +111,7 @@ class Experiment(object):
         training_loss /= len(self.__train_loader)
         return training_loss
 
-    # TODO: Perform one Pass on the validation set and return loss value. You may also update your best model here.
+    # Perform one Pass on the validation set and return loss value. You may also update your best model here.
     def __val(self):
         self.__model.eval()
         val_loss = 0
@@ -127,7 +129,7 @@ class Experiment(object):
         val_loss /= len(self.__val_loader)
         return val_loss
 
-    # TODO: Implement your test function here. Generate sample captions and evaluate loss and
+    # Implement your test function here. Generate sample captions and evaluate loss and
     #  bleu scores using the best model. Use utility functions provided to you in caption_utils.
     #  Note than you'll need image_ids and COCO object in this case to fetch all captions to generate bleu scores.
     def test(self):
@@ -138,11 +140,32 @@ class Experiment(object):
 
         with torch.no_grad():
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
-                raise NotImplementedError()
-
-        result_str = "Test Performance: Loss: {}, Perplexity: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
-                                                                                               bleu1,
-                                                                                               bleu4)
+                images = images.to(self.device)
+                captions = captions.to(self.device)
+                # loss
+                outputs = self.__model(images, captions)
+                loss = self.__criterion(outputs, captions)
+                test_loss += loss
+                # bleu
+                generated_captions = self.__model.generate(images, self.__generation_config)
+                total_bleu1 = 0
+                total_bleu4 = 0
+                num_bleu = 0
+                for i in range(captions.size()[0]):
+                    test_captions = []
+                    for annotation in self.__coco_test.imgToAnns[img_ids[i]]:
+                        test_captions = annotation['caption']
+                        tokenized = nltk.tokenize.word_tokenize(str(test_captions).lower())
+                        test_captions.append(tokenized)
+                    total_bleu1 += caption_utils.bleu1(test_captions, generated_captions[i])
+                    total_bleu4 += caption_utils.bleu4(test_captions, generated_captions[i])
+                    num_bleu += 1
+                bleu1 += total_bleu1 / num_bleu
+                bleu4 += total_bleu4 / num_bleu
+        bleu1 /= len(self.__test_loader)
+        bleu4 /= len(self.__test_loader)
+        test_loss /= len(self.__test_loader)
+        result_str = "Test Performance: Loss: {}, Bleu1: {}, Bleu4: {}".format(test_loss, bleu1, bleu4)
         self.__log(result_str)
 
         return test_loss, bleu1, bleu4
