@@ -13,9 +13,10 @@
     "num_workers": 4
   },
   "experiment": {
-    "num_epochs": 10,
+    "num_epochs": 3,
     "learning_rate": 5e-4,
-    "save": false
+    "save": true,
+    "load": false
   },
   "model": {
     "hidden_size": 512,

@@ -15,7 +15,8 @@
   "experiment": {
     "num_epochs": 200,
     "learning_rate": 1e-3,
-    "save": false
+    "save": true,
+    "load": false
   },
   "model": {
     "hidden_size": 512,

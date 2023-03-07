@@ -26,7 +26,7 @@ class Experiment(object):
             raise Exception("Configuration file doesn't exist: ", name)
 
         self.__name = config_data['experiment_name']
-        self.__experiment_dir = os.path.join(ROOT_STATS_DIR, self.__name)
+        self.__experiment_dir = ROOT_STATS_DIR
 
         # Load Datasets
         self.__coco_test, self.__vocab, self.__train_loader, self.__val_loader, self.__test_loader = get_datasets(
@@ -40,6 +40,7 @@ class Experiment(object):
         self.__val_losses = []
         self.__best_model = None  # Save your best model in this field and use this in test method.
         self.__save = config_data['experiment']['save']
+        self.__load = config_data['experiment']['load']
 
         # Init Model
         self.__model = get_model(config_data, self.__vocab)
@@ -64,7 +65,7 @@ class Experiment(object):
     def __load_experiment(self):
         os.makedirs(ROOT_STATS_DIR, exist_ok=True)
 
-        if os.path.exists(self.__experiment_dir):
+        if os.path.exists(self.__experiment_dir) and self.__load:
             self.__training_losses = read_file_in_dir(self.__experiment_dir, 'training_losses.txt')
             self.__val_losses = read_file_in_dir(self.__experiment_dir, 'val_losses.txt')
             self.__current_epoch = len(self.__training_losses)

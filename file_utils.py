@@ -17,7 +17,7 @@ def read_file_in_dir(root_dir, file_name):
 
 
 def write_to_file(path, data):
-    with open(path, "w") as outfile:
+    with open(path, "w+") as outfile:
         json.dump(data, outfile)
 
 
