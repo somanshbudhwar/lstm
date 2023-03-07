@@ -79,7 +79,7 @@ class Experiment(object):
     # Main method to run your experiment. Should be self-explanatory.
     def run(self):
         print('=====================================')
-        print(f'Running {self.__model.name}')
+        print(f'Running {self.__model.model_type}')
         print(f'for {self.__epochs} epochs!')
         print('=====================================')
         start_epoch = self.__current_epoch
