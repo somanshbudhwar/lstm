@@ -87,9 +87,9 @@ class Experiment(object):
             val_loss = self.__val()
             losses.append(val_loss)
             if epoch > self.__patience:
-                if losses[-1] > losses[-self.__patience-1] \
-                        and losses[-1] > losses[-self.__patience]\
-                        and losses[-1] > losses[-self.__patience + 1]:
+                if losses[-1] > losses[epoch-self.__patience-1] \
+                        and losses[-1] > losses[epoch-self.__patience]\
+                        and losses[-1] > losses[epoch-self.__patience + 1]:
                     print('early stopping')
                     break
             self.__record_stats(train_loss, val_loss)
