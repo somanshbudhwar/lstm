@@ -86,7 +86,7 @@ class Experiment(object):
     def generate_example_caption(self):
         if self.example_img is not None:
             img = self.example_img
-            batched = torch.unsqueeze(img, dim=0)
+            batched = torch.unsqueeze(img, dim=0).to(self.device)
             generated_captions = self.__model.generate(batched, self.__generation_config)
             print("Generated captions:")
             print(" ".join(generated_captions[0]))
@@ -97,7 +97,7 @@ class Experiment(object):
 
         for epoch in range(start_epoch, self.__epochs):  # loop over the dataset multiple times
             self.generate_example_caption()
-            if epoch % 10 == 0:
+            if epoch % 10 == 0 and epoch != start_epoch:
                 print(f'Epoch {epoch}. Running test!')
                 self.test()
             start_time = datetime.now()
