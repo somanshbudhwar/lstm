@@ -39,6 +39,7 @@ class Experiment(object):
         self.__training_losses = []
         self.__val_losses = []
         self.__best_model = None  # Save your best model in this field and use this in test method.
+        self.__save = config_data['experiment']['save']
 
         # Init Model
         self.__model = get_model(config_data, self.__vocab)
@@ -90,16 +91,17 @@ class Experiment(object):
     def __train(self, epoch):
         self.__model.train()
         training_loss = 0
-        genned = False
+        # genned = False
         pbar = tqdm(total=len(self.__train_loader), desc=f'Epoch {epoch} training')
         # Iterate over the data, implement the training function
         for i, (images, captions, _) in enumerate(self.__train_loader):
-            if not genned: # generate and print single example
-                single_batch = torch.unsqueeze(images[0], 0)
-                single_batch = single_batch.to(self.device)
-                gen_captions = self.__model.generate(single_batch, self.__generation_config)
-                tqdm.write(gen_captions.size())
-                tqdm.write(gen_captions[0])
+            # test code ignore
+            # if not genned: # generate and print single example
+            #     single_batch = torch.unsqueeze(images[0], 0)
+            #     single_batch = single_batch.to(self.device)
+            #     gen_captions = self.__model.generate(single_batch, self.__generation_config)
+            #     # print(gen_captions.size())
+            #     print(gen_captions[0])
 
             self.__optimizer.zero_grad()
             images = images.to(self.device)
@@ -167,8 +169,8 @@ class Experiment(object):
                 for i in range(captions.size()[0]):
                     test_captions = []
                     for annotation in self.__coco_test.imgToAnns[img_ids[i]]:
-                        test_captions = annotation['caption']
-                        tokenized = nltk.tokenize.word_tokenize(str(test_captions).lower())
+                        test_caption = annotation['caption']
+                        tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
                         test_captions.append(tokenized)
                     total_bleu1 += caption_utils.bleu1(test_captions, generated_captions[i])
                     total_bleu4 += caption_utils.bleu4(test_captions, generated_captions[i])
@@ -184,10 +186,11 @@ class Experiment(object):
         return test_loss, bleu1, bleu4
 
     def __save_model(self):
-        root_model_path = os.path.join(self.__experiment_dir, 'latest_model.pt')
-        model_dict = self.__model.state_dict()
-        state_dict = {'model': model_dict, 'optimizer': self.__optimizer.state_dict()}
-        torch.save(state_dict, root_model_path)
+        if self.__save:
+            root_model_path = os.path.join(self.__experiment_dir, 'latest_model.pt')
+            model_dict = self.__model.state_dict()
+            state_dict = {'model': model_dict, 'optimizer': self.__optimizer.state_dict()}
+            torch.save(state_dict, root_model_path)
 
     def __record_stats(self, train_loss, val_loss):
         self.__training_losses.append(train_loss)
@@ -195,14 +198,16 @@ class Experiment(object):
 
         self.plot_stats()
 
-        write_to_file_in_dir(self.__experiment_dir, 'training_losses.txt', self.__training_losses)
-        write_to_file_in_dir(self.__experiment_dir, 'val_losses.txt', self.__val_losses)
+        if self.__save:
+            write_to_file_in_dir(self.__experiment_dir, 'training_losses.txt', self.__training_losses)
+            write_to_file_in_dir(self.__experiment_dir, 'val_losses.txt', self.__val_losses)
 
     def __log(self, log_str, file_name=None):
         print(log_str)
-        log_to_file_in_dir(self.__experiment_dir, 'all.log', log_str)
-        if file_name is not None:
-            log_to_file_in_dir(self.__experiment_dir, file_name, log_str)
+        if self.__save:
+            log_to_file_in_dir(self.__experiment_dir, 'all.log', log_str)
+            if file_name is not None:
+                log_to_file_in_dir(self.__experiment_dir, file_name, log_str)
 
     def __log_epoch_stats(self, start_time):
         time_elapsed = datetime.now() - start_time
@@ -223,5 +228,6 @@ class Experiment(object):
         plt.xlabel("Epochs")
         plt.legend(loc='best')
         plt.title(self.__name + " Stats Plot")
-        plt.savefig(os.path.join(self.__experiment_dir, "stat_plot.png"))
+        if self.__save:
+            plt.savefig(os.path.join(self.__experiment_dir, "stat_plot.png"))
         plt.show()

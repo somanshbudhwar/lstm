@@ -130,12 +130,12 @@ class BaselineModel(nn.Module):
                 softmax = torchf.softmax(output / temperature, dim=1) # (N, vocab_size)
                 # sample softmax
                 indices = Categorical(softmax).sample() # 1d array size N
-
             for i in range(batch_size):
                 if keep_generating[i]:
-                    word = self.vocab.idx2word[indices[i]]
+                    word_idx = indices[i].item()
+                    word = self.vocab.idx2word[word_idx]
                     captions[i][iter + 1] = word
-                    if self.vocab.idx2word[indices[i]] == "<end>":
+                    if self.vocab.idx2word[word_idx] == "<end>":
                         num_complete += 1
                         keep_generating[i] = False
             iter += 1
