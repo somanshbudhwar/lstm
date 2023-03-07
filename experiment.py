@@ -35,6 +35,7 @@ class Experiment(object):
         # Setup Experiment
         self.__generation_config = config_data['generation']
         self.__epochs = config_data['experiment']['num_epochs']
+        self.__patience = config_data['experiment']['patience']
         self.__current_epoch = 0
         self.__training_losses = []
         self.__val_losses = []
@@ -78,11 +79,19 @@ class Experiment(object):
     # Main method to run your experiment. Should be self-explanatory.
     def run(self):
         start_epoch = self.__current_epoch
+        losses = []
         for epoch in range(start_epoch, self.__epochs):  # loop over the dataset multiple times
             start_time = datetime.now()
             self.__current_epoch = epoch
             train_loss = self.__train()
             val_loss = self.__val()
+            losses.append(val_loss)
+            if epoch > self.__patience:
+                if losses[-1] > losses[-self.__patience-1] \
+                        and losses[-1] > losses[-self.__patience]\
+                        and losses[-1] > losses[-self.__patience + 1]:
+                    print('early stopping')
+                    break
             self.__record_stats(train_loss, val_loss)
             self.__log_epoch_stats(start_time)
             self.__save_model()
