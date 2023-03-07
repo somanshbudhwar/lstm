@@ -48,7 +48,7 @@ class CocoDataset(data.Dataset):
         path = coco.loadImgs(img_id)[0]['file_name'];
         image = Image.open(os.path.join(self.root, path)).convert('RGB')
         image = self.resize(image)
-        image = self.normalize(np.asarray(image))
+        image = self.normalize(image)
 
         # Convert caption (string) to word ids.
         tokens = nltk.tokenize.word_tokenize(str(caption).lower())

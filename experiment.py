@@ -86,6 +86,7 @@ class Experiment(object):
             train_loss = self.__train()
             val_loss = self.__val()
             losses.append(val_loss)
+            print('losses', losses)
             if epoch > self.__patience:
                 if losses[-1] > losses[epoch-self.__patience-1] \
                         and losses[-1] > losses[epoch-self.__patience]\
@@ -150,6 +151,9 @@ class Experiment(object):
 
         with torch.no_grad():
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
+                images = images.to(self.device)
+                captions = captions.to(self.device)
+
                 output = self.__model.forward(images, captions)
                 output = torch.permute(output, (0, 2, 1))
                 loss = self.__criterion(output, captions)
