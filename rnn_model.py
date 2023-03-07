@@ -74,6 +74,7 @@ class RNNModel(nn.Module):
         final_hiddens, _ = self.decoder(embedded, hidden_states)
         # print(f'final_hiddens: {final_hiddens.size()}')
         output = self.hidden2output(final_hiddens) # (N, seq len, vocab size)
+        output = torchf.softmax(output, dim=2)
         return output.permute(0, 2, 1) # (N, vocab size, seq len)
 
     def generate(self, images, config):
