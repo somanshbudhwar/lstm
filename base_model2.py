@@ -121,7 +121,7 @@ class BaselineModel(nn.Module):
             # (N, 1, hidden_size)
             hidden_output, (hidden_states, cell_states) = self.decoder(embedded, (hidden_states, cell_states))
             output = self.hidden2output(hidden_output) # (N, 1, vocab_size) 1-hot encoded
-            output = output.squeeze() # collapse (N, 1, vocab_size) -> (N, vocab_size)
+            output = output.squeeze(dim=1) # collapse (N, 1, vocab_size) -> (N, vocab_size)
             if deterministic: # deterministically sample from softmax
                 # returns values, indices, we only want indices to decode using vocab
                 _, indices = torchf.log_softmax(output, dim=1).max(dim=1) # 1d array size N
