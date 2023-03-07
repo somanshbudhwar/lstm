@@ -96,6 +96,7 @@ class Experiment(object):
         for i, (images, captions, _) in enumerate(self.__train_loader):
             if not genned: # generate and print single example
                 single_batch = torch.unsqueeze(images[0], 0)
+                single_batch = single_batch.to(self.device)
                 gen_captions = self.__model.generate(single_batch, self.__generation_config)
                 tqdm.write(gen_captions.size())
                 tqdm.write(gen_captions[0])
