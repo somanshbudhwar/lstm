@@ -115,7 +115,7 @@ class BaselineModel(nn.Module):
         num_complete = 0
         while iter < max_len and num_complete < batch_size:
             # encode most recent word using vocab
-            last_words = torch.tensor([self.vocab(ls[iter]) for ls in captions]) # (N, seq_len=1)
+            last_words = torch.tensor([self.vocab(ls[iter]) for ls in captions]).to(images.device) # (N, seq_len=1)
             # embed
             embedded = self.word_embedder(last_words) # (N, 1, embedding_size)
             # (N, 1, hidden_size)
