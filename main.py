@@ -11,5 +11,6 @@ if __name__ == "__main__":
 
     print("Running Experiment: ", exp_name)
     exp = Experiment(exp_name)
+    exp.print_props()
     exp.run()
     exp.test()

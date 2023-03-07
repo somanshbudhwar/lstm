@@ -76,12 +76,14 @@ class Experiment(object):
             self.__model = self.__model.cuda().float()
             self.__criterion = self.__criterion.cuda()
 
-    # Main method to run your experiment. Should be self-explanatory.
-    def run(self):
+    def print_props(self):
         print('=====================================')
         print(f'Running {self.__model.model_type}')
         print(f'for {self.__epochs} epochs!')
         print('=====================================')
+
+    # Main method to run your experiment. Should be self-explanatory.
+    def run(self):
         start_epoch = self.__current_epoch
         for epoch in range(start_epoch, self.__epochs):  # loop over the dataset multiple times
             start_time = datetime.now()
