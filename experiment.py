@@ -143,7 +143,7 @@ class Experiment(object):
         # avg training loss
         training_loss /= len(self.__train_loader)
         pbar.close()
-        print(f'Epoch {epoch + 1}\tTrain Loss {training_loss}')
+        # print(f'Epoch {epoch + 1}\tTrain Loss {training_loss}')
         return training_loss
 
     # Perform one Pass on the validation set and return loss value. You may also update your best model here.
@@ -164,7 +164,7 @@ class Experiment(object):
                 pbar.update(1)
         val_loss /= len(self.__val_loader)
         pbar.close()
-        print(f'Epoch {epoch + 1}\tVal Loss {val_loss}')
+        # print(f'Epoch {epoch + 1}\tVal Loss {val_loss}')
         return val_loss
 
     # Implement your test function here. Generate sample captions and evaluate loss and
