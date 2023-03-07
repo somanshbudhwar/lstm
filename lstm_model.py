@@ -43,7 +43,6 @@ class LSTMModel(nn.Module):
         # to deal w/
         # for feeding hiddens into
         self.hidden2output = nn.Linear(hidden_size, self.vocab_size)
-        self.softmax = nn.Softmax(dim=2)
 
     def forward(self, images, captions):
         """
@@ -76,7 +75,6 @@ class LSTMModel(nn.Module):
         final_hiddens, (_, _) = self.decoder(embedded, (hidden_states, cell_states))
         # print(f'final_hiddens: {final_hiddens.size()}')
         output = self.hidden2output(final_hiddens) # (N, seq len, vocab size)
-        output = self.softmax(output)
         return output.permute(0, 2, 1) # (N, vocab size, seq len)
 
     def generate(self, images, config):
