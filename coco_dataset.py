@@ -55,6 +55,16 @@ class CocoDataset(data.Dataset):
     def __len__(self):
         return len(self.ids)
 
+    def to_caption(self, caption):
+        """Converts a list of word ids to a caption."""
+        words = []
+        for word in caption:
+            word = self.vocab.idx2word[word]
+            if word == '<end>':
+                break
+            words.append(word)
+        return ' '.join(words)
+
 
 def collate_fn(data):
     """Creates mini-batch tensors from the list of tuples (image, caption)
@@ -89,3 +99,6 @@ def collate_fn(data):
         end = lengths[i]
         targets[i, :end] = cap[:end]
     return images, targets, img_ids
+
+
+

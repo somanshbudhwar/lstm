@@ -1,11 +1,9 @@
-import csv
-import os
-
-from pycocotools.coco import COCO
+import csv, os
 from torch.utils.data import DataLoader
+from pycocotools.coco import COCO
 
-from coco_dataset import CocoDataset, collate_fn
 from vocab import load_vocab
+from coco_dataset import CocoDataset, collate_fn
 
 
 # Builds your datasets here based on the configuration.

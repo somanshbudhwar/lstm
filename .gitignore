@@ -1,3 +1,7 @@
 .idea/
 test.py
 venv
+__pycache__/
+data/
+experiment_data/
+savedVocab
