@@ -13,9 +13,9 @@ from vocab import Vocabulary
 # Writeup recommends:
 # 2 layers
 # 512 hidden units
-class BaselineModel(nn.Module):
+class LSTMModel(nn.Module):
     def __init__(self, embedding_size, hidden_size, vocab: Vocabulary, num_layers=2):
-        super(BaselineModel, self).__init__()
+        super(LSTMModel, self).__init__()
         self.num_layers = num_layers
         self.vocab = vocab
         self.vocab_size = len(vocab)

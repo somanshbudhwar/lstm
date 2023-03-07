@@ -87,6 +87,7 @@ class Experiment(object):
             self.__record_stats(train_loss, val_loss)
             self.__log_epoch_stats(start_time)
             self.__save_model()
+        self.plot_stats()
 
     def __train(self, epoch):
         self.__model.train()
@@ -127,7 +128,7 @@ class Experiment(object):
     def __val(self, epoch):
         self.__model.eval()
         val_loss = 0
-        pbar = tqdm(total=len(self.__val_loader), desc=f'Epoch {epoch} training')
+        pbar = tqdm(total=len(self.__val_loader), desc=f'Epoch {epoch} validation')
         with torch.no_grad():
             for i, (images, captions, _) in enumerate(self.__val_loader):
                 images = images.to(self.device)
@@ -153,6 +154,7 @@ class Experiment(object):
         bleu1 = 0
         bleu4 = 0
 
+        pbar = tqdm(total=self.__test_loader, desc='Testing...')
         with torch.no_grad():
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
                 images = images.to(self.device)
@@ -177,9 +179,11 @@ class Experiment(object):
                     num_bleu += 1
                 bleu1 += total_bleu1 / num_bleu
                 bleu4 += total_bleu4 / num_bleu
+                pbar.update(1)
         bleu1 /= len(self.__test_loader)
         bleu4 /= len(self.__test_loader)
         test_loss /= len(self.__test_loader)
+        pbar.close()
         result_str = "Test Loss: {}\tBleu1: {}\tBleu4: {}".format(test_loss, bleu1, bleu4)
         self.__log(result_str)
 
@@ -195,8 +199,6 @@ class Experiment(object):
     def __record_stats(self, train_loss, val_loss):
         self.__training_losses.append(train_loss)
         self.__val_losses.append(val_loss)
-
-        self.plot_stats()
 
         if self.__save:
             write_to_file_in_dir(self.__experiment_dir, 'training_losses.txt', self.__training_losses)
