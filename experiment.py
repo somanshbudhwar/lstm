@@ -47,9 +47,10 @@ class Experiment(object):
 
         # Criterion and Optimizers set 
         self.__criterion = nn.CrossEntropyLoss()
-        self.__optimizer = torch.optim.Adam(
+        self.__optimizer = torch.optim.SGD(
             self.__model.parameters(),
             lr=config_data['experiment']['learning_rate'],
+            momentum=0.9
         )
         self.__scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.__optimizer)
 
