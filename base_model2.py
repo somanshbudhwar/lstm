@@ -136,8 +136,8 @@ class BaselineModel(nn.Module):
                     word = self.vocab.idx2word[indices[i]]
                     captions[i][iter + 1] = word
                     if self.vocab.idx2word[indices[i]] == "<end>":
-                        num_complete = num_complete + 1
+                        num_complete += 1
                         keep_generating[i] = False
-            iter = iter + 1
+            iter += 1
         # cleanup all the flag words
         return [[word for word in ls if word != "<start>" and word != "<end>" and word != "<pad>"] for ls in captions]

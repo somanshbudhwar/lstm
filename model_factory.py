@@ -11,5 +11,10 @@ def get_model(config_data, vocab):
 
     # You may add more parameters if you want
     # model = BaselineEncoderDecoder(hidden_size, embedding_size, vocab, num_layers, model_type)
-    model = BaselineModel(embedding_size, hidden_size, vocab)
+    if model_type == "LSTM":
+        model = BaselineEncoderDecoder(hidden_size, embedding_size, vocab, num_layers, model_type)
+    elif model_type == "LSTM2":
+        model = BaselineModel(embedding_size, hidden_size, vocab, num_layers)
+    else:
+        model = BaselineModel(embedding_size, hidden_size, vocab, num_layers)
     return model

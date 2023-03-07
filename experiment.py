@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 from datetime import datetime
 
+from tqdm import tqdm
+
 import caption_utils
 from caption_utils import *
 from constants import ROOT_STATS_DIR
@@ -43,7 +45,7 @@ class Experiment(object):
 
         # Criterion and Optimizers set 
         self.__criterion = nn.CrossEntropyLoss()
-        self.__optimizer = torch.optim.Adam(self.__model.parameters(), lr=0.001)
+        self.__optimizer = torch.optim.Adam(self.__model.parameters(), lr=config_data['experiment']['learning_rate'])
         # TODO learning rate scheduler??
 
         self.__init_model()
@@ -79,19 +81,25 @@ class Experiment(object):
         for epoch in range(start_epoch, self.__epochs):  # loop over the dataset multiple times
             start_time = datetime.now()
             self.__current_epoch = epoch
-            train_loss = self.__train()
-            val_loss = self.__val()
+            train_loss = self.__train(epoch)
+            val_loss = self.__val(epoch)
             self.__record_stats(train_loss, val_loss)
             self.__log_epoch_stats(start_time)
             self.__save_model()
 
-    def __train(self):
+    def __train(self, epoch):
         self.__model.train()
         training_loss = 0
-        print('train start')
-
+        genned = False
+        pbar = tqdm(total=len(self.__train_loader), desc=f'Epoch {epoch} training')
         # Iterate over the data, implement the training function
         for i, (images, captions, _) in enumerate(self.__train_loader):
+            if not genned: # generate and print single example
+                single_batch = torch.unsqueeze(images[0], 0)
+                gen_captions = self.__model.generate(single_batch, self.__generation_config)
+                tqdm.write(gen_captions.size())
+                tqdm.write(gen_captions[0])
+
             self.__optimizer.zero_grad()
             images = images.to(self.device)
             captions = captions.to(self.device)
@@ -105,17 +113,18 @@ class Experiment(object):
             self.__optimizer.step()
 
             training_loss += loss.item()
-            print(f'iter {i}\tloss {loss.item()}')
-
+            pbar.update(1)
         # avg training loss
         training_loss /= len(self.__train_loader)
+        pbar.close()
+        print(f'Epoch {epoch}\tTrain Loss {training_loss}')
         return training_loss
 
     # Perform one Pass on the validation set and return loss value. You may also update your best model here.
-    def __val(self):
+    def __val(self, epoch):
         self.__model.eval()
         val_loss = 0
-
+        pbar = tqdm(total=len(self.__val_loader), desc=f'Epoch {epoch} training')
         with torch.no_grad():
             for i, (images, captions, _) in enumerate(self.__val_loader):
                 images = images.to(self.device)
@@ -126,7 +135,10 @@ class Experiment(object):
                 loss = self.__criterion(outputs, captions)
 
                 val_loss += loss.item()
+                pbar.update(1)
         val_loss /= len(self.__val_loader)
+        pbar.close()
+        print(f'Epoch {epoch}\tVal Loss {val_loss}')
         return val_loss
 
     # Implement your test function here. Generate sample captions and evaluate loss and
@@ -165,7 +177,7 @@ class Experiment(object):
         bleu1 /= len(self.__test_loader)
         bleu4 /= len(self.__test_loader)
         test_loss /= len(self.__test_loader)
-        result_str = "Test Performance: Loss: {}, Bleu1: {}, Bleu4: {}".format(test_loss, bleu1, bleu4)
+        result_str = "Test Loss: {}\tBleu1: {}\tBleu4: {}".format(test_loss, bleu1, bleu4)
         self.__log(result_str)
 
         return test_loss, bleu1, bleu4
