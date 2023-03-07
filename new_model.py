@@ -37,11 +37,12 @@ class DecoderRNN(nn.Module):
         self.vocab_size = vocab_size
 
         # lstm cell
-        if model_type == 'LSTM':
-            self.lstm_cell = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers)
-        elif model_type == 'RNN':
-            self.lstm_cell = nn.RNN(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers)
+        # if model_type == 'LSTM':
+        #     self.lstm_cell = nn.LSTM(input_size=2*embed_size, hidden_size=hidden_size, num_layers=num_layers)
+        # elif model_type == 'RNN':
+        #     self.lstm_cell = nn.RNN(input_size=2*embed_size, hidden_size=hidden_size, num_layers=num_layers)
         # output fully connected layer
+        self.lstm_cell = nn.LSTM(input_size=2 * embed_size, hidden_size=hidden_size, num_layers=num_layers)
         self.fc_out = nn.Linear(in_features=self.hidden_size, out_features=self.vocab_size)
 
         # embedding layer
@@ -50,32 +51,26 @@ class DecoderRNN(nn.Module):
         # activations
 
     def forward(self, features, captions):
-
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # batch size
         batch_size = features.size(0)
 
         # init the hidden and cell states to zeros
         # hidden_state = torch.zeros((batch_size, self.hidden_size)).cuda()
         # cell_state = torch.zeros((batch_size, self.hidden_size)).cuda()
-
+        padding = torch.zeros(batch_size, 1, dtype = torch.long).to(device)
+        captions = torch.cat((padding, captions), dim=1)
         # define the output tensor placeholder
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        outputs = torch.empty((batch_size, captions.size(1), self.vocab_size))
+
+        outputs = torch.empty((batch_size, (captions.size(1)-1), self.vocab_size))
         outputs = outputs.to(device)
 
         # embed the captions
         captions_embed = self.embed(captions)
 
         # pass the caption word by word
-        for t in range(captions.size(1)):
-
-            # for the first time step the input is the feature vector
-            if t == 0:
-                hidden_state, cell_state = self.lstm_cell(features)
-
-            # for the 2nd+ time step, using teacher forcer
-            else:
-                hidden_state, cell_state = self.lstm_cell(captions_embed[:, t, :])
+        for t in range(captions.size(1)-1):
+            hidden_state, cell_state = self.lstm_cell(torch.concat((captions_embed[:, t, :], features), 1))
 
             # output of the attention mechanism
             out = self.fc_out(hidden_state)
@@ -86,28 +81,30 @@ class DecoderRNN(nn.Module):
         return outputs
 
     def predict(self, features, max_length=20):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         final_output = []
         # batch size
         batch_size = features.size(0)
-
+        padding = self.embed(torch.zeros(1, dtype=torch.long).to(device))
+        features_concat = torch.cat((padding, features), dim=1)
         while True:
-            hidden_state, cell_state = self.lstm_cell(features)
+
+            hidden_state, cell_state = self.lstm_cell(features_concat)
             out = self.fc_out(hidden_state)
-            out = out
             out.squeeze_(1)
             _, max_idx = torch.max(out, dim=1)
             final_output.extend(max_idx.cpu().numpy())
             if len(final_output) >= max_length:
                 break
 
-            features = self.embed(max_idx)
-            features = features.unsqueeze(1)
+            cap_embed = self.embed(max_idx)
+            features_concat = torch.cat((cap_embed, features), dim=1)
         return final_output
 
 
-class Encoder_Decoder(nn.Module):
+class Encoder_Decoder_new(nn.Module):
     def __init__(self, hidden_size, embedding_size, num_layers, model_type, vocab_size):
-        super(Encoder_Decoder, self).__init__()
+        super(Encoder_Decoder_new, self).__init__()
         self.encoder = Encoder(embedding_size)
         self.decoder = DecoderRNN(embedding_size, hidden_size, vocab_size, num_layers, model_type)
 

@@ -141,16 +141,16 @@ class Experiment(object):
 
         with torch.no_grad():
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
-                output = self.__model.forward(images, captions)
+                images = images.to(self.device)
+                captions = captions.to(self.device)
+                output = self.__model(images, captions)
                 output = torch.permute(output, (0, 2, 1))
                 loss = self.__criterion(output, captions)
                 test_loss = test_loss + loss
-                bleu1 = bleu1 + caption_utils.bleu1(output, captions)
-                bleu4 = bleu4 + caption_utils.bleu4(output, captions)
+               # bleu1 = bleu1 + caption_utils.bleu1(output, captions)
+               # bleu4 = bleu4 + caption_utils.bleu4(output, captions)
 
-        result_str = "Test Performance: Loss: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
-                                                                               bleu1,
-                                                                               bleu4)
+        result_str = "Test Performance: Loss: {}, Bleu1: , Bleu4: ".format(test_loss)
 
         self.__log(result_str)
         self.predict()
