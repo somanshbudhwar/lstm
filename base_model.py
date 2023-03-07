@@ -48,6 +48,7 @@ class BaselineEncoderDecoder(nn.Module):
     def __init__(self, hidden_size, embedding_size, vocab: Vocabulary, num_layers, model_type):
         vocab_size = len(vocab)
         super(BaselineEncoderDecoder, self).__init__()
+        self.model_type = "LSTM"
         self.encoder = Resnet50Encoder(embedding_size)
         self.decoder = Decoder(hidden_size, embedding_size, vocab_size, num_layers, model_type)
 

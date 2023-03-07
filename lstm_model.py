@@ -16,6 +16,7 @@ from vocab import Vocabulary
 class LSTMModel(nn.Module):
     def __init__(self, embedding_size, hidden_size, vocab: Vocabulary, num_layers=2):
         super(LSTMModel, self).__init__()
+        self.model_type = "LSTM2"
         self.num_layers = num_layers
         self.vocab = vocab
         self.vocab_size = len(vocab)

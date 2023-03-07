@@ -78,6 +78,10 @@ class Experiment(object):
 
     # Main method to run your experiment. Should be self-explanatory.
     def run(self):
+        print('=====================================')
+        print(f'Running {self.__model.name}')
+        print(f'for {self.__epochs} epochs!')
+        print('=====================================')
         start_epoch = self.__current_epoch
         for epoch in range(start_epoch, self.__epochs):  # loop over the dataset multiple times
             start_time = datetime.now()

@@ -16,6 +16,7 @@ from vocab import Vocabulary
 class RNNModel(nn.Module):
     def __init__(self, embedding_size, hidden_size, vocab: Vocabulary, num_layers=2):
         super(RNNModel, self).__init__()
+        self.model_type = "RNN"
         self.num_layers = num_layers
         self.vocab = vocab
         self.vocab_size = len(vocab)
