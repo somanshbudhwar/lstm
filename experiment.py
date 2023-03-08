@@ -112,6 +112,7 @@ class Experiment(object):
             self.__log_epoch_stats(start_time)
             self.__save_model()
             self.plot_stats()
+        self.plot_stats(True)
 
     def __train(self, epoch):
         self.__model.train()
@@ -247,7 +248,7 @@ class Experiment(object):
                                          str(time_to_completion))
         self.__log(summary_str, 'epoch.log')
 
-    def plot_stats(self):
+    def plot_stats(self, save=True):
         e = len(self.__training_losses)
         x_axis = np.arange(1, e + 1, 1)
         plt.figure()
@@ -256,6 +257,6 @@ class Experiment(object):
         plt.xlabel("Epochs")
         plt.legend(loc='best')
         plt.title(self.__name + " Stats Plot")
-        if self.__save:
+        if self.__save and save:
             plt.savefig(os.path.join(self.__experiment_dir, "stat_plot.png"))
         plt.show()
