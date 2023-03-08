@@ -48,17 +48,16 @@ class Experiment(object):
 
         # Criterion and Optimizers set 
         self.__criterion = nn.CrossEntropyLoss()
-        self.__optimizer = torch.optim.SGD(
+        self.__optimizer = torch.optim.Adam(
             self.__model.parameters(),
             lr=config_data['experiment']['learning_rate'],
-            momentum=0.9
         )
-        self.__scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.__optimizer)
 
         self.__init_model()
 
         # Load Experiment Data if available
-        # self.__load_experiment()
+        if self.__load:
+            self.__load_experiment()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Loads the experiment data if exists to resume training from last saved checkpoint.
@@ -168,7 +167,6 @@ class Experiment(object):
                 val_loss += loss.item()
                 pbar.update(1)
         val_loss /= len(self.__val_loader)
-        self.__scheduler.step(val_loss)
         pbar.close()
         # print(f'Epoch {epoch + 1}\tVal Loss {val_loss}')
         return val_loss
