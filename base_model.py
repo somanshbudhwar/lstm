@@ -86,23 +86,26 @@ class DecoderRNN(nn.Module):
         return outputs
 
     def predict(self, features, max_length=20):
-        final_output = []
+        final_outputs = []
         # batch size
         batch_size = features.size(0)
+        for i in range(batch_size):
+            features = features[i, :].unsqueeze(0)
+            final_output = []
+            while True:
+                hidden_state, cell_state = self.lstm_cell(features)
+                out = self.fc_out(hidden_state)
+                out = out
+                out.squeeze_(1)
+                _, max_idx = torch.max(out, dim=1)
+                final_output.extend(max_idx.cpu().numpy())
+                if len(final_output) >= max_length:
+                    break
 
-        while True:
-            hidden_state, cell_state = self.lstm_cell(features)
-            out = self.fc_out(hidden_state)
-            out = out
-            out.squeeze_(1)
-            _, max_idx = torch.max(out, dim=1)
-            final_output.extend(max_idx.cpu().numpy())
-            if len(final_output) >= max_length:
-                break
-
-            features = self.embed(max_idx)
-            features = features.unsqueeze(1)
-        return final_output
+                features = self.embed(max_idx)
+                features = features.unsqueeze(1)
+            final_outputs.append(final_output)
+        return final_outputs
 
 
 class Encoder_Decoder(nn.Module):

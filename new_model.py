@@ -82,24 +82,27 @@ class DecoderRNN(nn.Module):
 
     def predict(self, features, max_length=20):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        final_output = []
+
         # batch size
         batch_size = features.size(0)
-        padding = self.embed(torch.zeros(1, dtype=torch.long).to(device))
+        final_output = []
+        padding = self.embed(torch.zeros((batch_size, 1), dtype=torch.long).to(device)).squeeze(1)
         features_concat = torch.cat((padding, features), dim=1)
+
         while True:
 
             hidden_state, cell_state = self.lstm_cell(features_concat)
             out = self.fc_out(hidden_state)
             out.squeeze_(1)
             _, max_idx = torch.max(out, dim=1)
-            final_output.extend(max_idx.cpu().numpy())
+            final_output.append(max_idx)
             if len(final_output) >= max_length:
                 break
 
             cap_embed = self.embed(max_idx)
             features_concat = torch.cat((cap_embed, features), dim=1)
-        return final_output
+
+        return torch.stack(final_output).permute(1, 0)
 
 
 class Encoder_Decoder_new(nn.Module):
@@ -114,7 +117,7 @@ class Encoder_Decoder_new(nn.Module):
         return outputs
 
     def predict(self, images):
-        images = images.unsqueeze(0)
+        images = images
         features = self.encoder(images)
         outputs = self.decoder.predict(features)
         return outputs

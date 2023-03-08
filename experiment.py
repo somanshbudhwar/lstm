@@ -35,6 +35,7 @@ class Experiment(object):
         # Setup Experiment
         self.__generation_config = config_data['generation']
         self.__epochs = config_data['experiment']['num_epochs']
+        self.__patience = config_data['experiment']['patience']
         self.__current_epoch = 0
         self.__training_losses = []
         self.__val_losses = []
@@ -78,11 +79,20 @@ class Experiment(object):
     # Main method to run your experiment. Should be self-explanatory.
     def run(self):
         start_epoch = self.__current_epoch
+        losses = []
         for epoch in range(start_epoch, self.__epochs):  # loop over the dataset multiple times
             start_time = datetime.now()
             self.__current_epoch = epoch
             train_loss = self.__train()
             val_loss = self.__val()
+            losses.append(val_loss)
+            print('losses', losses)
+            if epoch > self.__patience:
+                if losses[-1] > losses[epoch-self.__patience-1] \
+                        and losses[-1] > losses[epoch-self.__patience]\
+                        and losses[-1] > losses[epoch-self.__patience + 1]:
+                    print('early stopping')
+                    break
             self.__record_stats(train_loss, val_loss)
             self.__log_epoch_stats(start_time)
             self.__save_model()
@@ -143,14 +153,29 @@ class Experiment(object):
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
                 images = images.to(self.device)
                 captions = captions.to(self.device)
+
                 output = self.__model(images, captions)
                 output = torch.permute(output, (0, 2, 1))
                 loss = self.__criterion(output, captions)
                 test_loss = test_loss + loss
-               # bleu1 = bleu1 + caption_utils.bleu1(output, captions)
-               # bleu4 = bleu4 + caption_utils.bleu4(output, captions)
+                output = self.__model.predict(images)
+                generated_captions = self.__test_loader.dataset.to_caption(output)
+                total_bleu1 = 0
+                total_bleu4 = 0
+                num_bleu = 0
+                for i in range(captions.size()[0]):
+                    test_captions = []
+                    for annotation in self.__coco_test.imgToAnns[img_ids[i]]:
+                        test_caption = annotation['caption']
+                        tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
+                        test_captions.append(tokenized)
+                    total_bleu1 += caption_utils.bleu1(test_captions, generated_captions[i])
+                    total_bleu4 += caption_utils.bleu4(test_captions, generated_captions[i])
+                    num_bleu += 1
+                bleu1 += total_bleu1 / num_bleu
+                bleu4 += total_bleu4 / num_bleu
 
-        result_str = "Test Performance: Loss: {}, Bleu1: , Bleu4: ".format(test_loss)
+        result_str = "Test Performance: Loss: {}, Bleu1:{} , Bleu4:{} ".format(test_loss, bleu1, bleu4)
 
         self.__log(result_str)
         self.predict()
@@ -208,9 +233,12 @@ class Experiment(object):
                 if i == 3:
                     break
                 images = images.to(self.device)
-                outputs = self.__model.predict(images[0])
-                print(outputs)
-                print(self.__test_loader.dataset.to_caption(outputs))
+                outputs = self.__model.predict(images)
+                annotation = self.__coco_test.imgToAnns[img_ids[0]]
+                test_caption = annotation['caption']
+                tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
+                print(tokenized)
+                print(self.__test_loader.dataset.to_caption(outputs)[0])
                 plt.imshow(images[0].cpu().numpy().transpose(1, 2, 0))
                 plt.savefig('foo' + str(i) + '.png')
 

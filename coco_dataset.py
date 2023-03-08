@@ -30,7 +30,13 @@ class CocoDataset(data.Dataset):
         ])
 
         self.resize = transforms.Compose(
-            [transforms.Resize(img_size, interpolation=2), transforms.CenterCrop(img_size)])
+            [transforms.Resize(img_size, interpolation=transforms.InterpolationMode.BILINEAR),
+             transforms.CenterCrop(img_size), transforms.RandomRotation(10),
+             transforms.RandomHorizontalFlip(),
+             transforms.RandomVerticalFlip(),
+             transforms.RandomGrayscale(p=0.1),
+             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)
+             ])
 
     def __getitem__(self, index):
         """Returns one data pair (image and caption)."""
@@ -42,7 +48,7 @@ class CocoDataset(data.Dataset):
         path = coco.loadImgs(img_id)[0]['file_name'];
         image = Image.open(os.path.join(self.root, path)).convert('RGB')
         image = self.resize(image)
-        image = self.normalize(np.asarray(image))
+        image = self.normalize(image)
 
         # Convert caption (string) to word ids.
         tokens = nltk.tokenize.word_tokenize(str(caption).lower())
@@ -57,13 +63,18 @@ class CocoDataset(data.Dataset):
 
     def to_caption(self, caption):
         """Converts a list of word ids to a caption."""
-        words = []
-        for word in caption:
-            word = self.vocab.idx2word[word]
-            if word == '<end>':
-                break
-            words.append(word)
-        return ' '.join(words)
+        batch_size = caption.size(0)
+        captions = []
+        for i in range(batch_size):
+            words = []
+            for word in caption[i]:
+                word = self.vocab.idx2word[word.item()]
+                if word == '<end>':
+                    break
+                if word != '<start>' and word != '<pad>' and word != '<unk>':
+                    words.append(word)
+            captions.append(words)
+        return captions
 
 
 def collate_fn(data):
