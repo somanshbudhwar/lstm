@@ -156,11 +156,25 @@ class Experiment(object):
                 captions = captions.to(self.device)
 
                 output = self.__model.forward(images, captions)
+                predicted_captions = torch.argmax(output, dim=2)
                 output = torch.permute(output, (0, 2, 1))
                 loss = self.__criterion(output, captions)
                 test_loss = test_loss + loss
-                bleu1 = bleu1 + caption_utils.bleu1(output, captions)
-                bleu4 = bleu4 + caption_utils.bleu4(output, captions)
+
+                for pred, true in zip(predicted_captions, captions):
+                    pred = self.__test_loader.dataset.to_caption(pred.cpu().numpy())
+                    true = self.__test_loader.dataset.to_caption(true.cpu().numpy())
+
+                    bleu1 = bleu1 + caption_utils.bleu1(true, pred)
+                    bleu4 = bleu4 + caption_utils.bleu4(true, pred)
+
+            bleu1 = bleu1 / len(captions)
+            bleu4 = bleu4 / len(captions)
+
+            print(bleu1, bleu4)
+
+            # bleu1 = bleu1 / len(self.__test_loader.dataset)
+            # bleu4 = bleu4 / len(self.__test_loader.dataset)
 
         result_str = "Test Performance: Loss: {}, Bleu1: {}, Bleu4: {}".format(test_loss,
                                                                                bleu1,
