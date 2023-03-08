@@ -234,7 +234,7 @@ class Experiment(object):
                     break
                 images = images.to(self.device)
                 outputs = self.__model.predict(images)
-                annotation = self.__coco_test.imgToAnns[img_ids[0]]
+                annotation = self.__coco_test.imgToAnns[img_ids[0]][0]
                 test_caption = annotation['caption']
                 tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
                 print(tokenized)
