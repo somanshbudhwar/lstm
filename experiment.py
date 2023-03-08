@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from datetime import datetime
+from pathlib import Path
 
 import caption_utils
 from caption_utils import *
@@ -39,7 +40,7 @@ class Experiment(object):
         self.__current_epoch = 0
         self.__training_losses = []
         self.__val_losses = []
-        self.__best_model = None  # Save your best model in this field and use this in test method.
+        self.__best_model = None # Save your best model in this field and use this in test method.
 
         # Init Model
         self.__model = get_model(config_data, self.__vocab)
@@ -86,7 +87,6 @@ class Experiment(object):
             train_loss = self.__train()
             val_loss = self.__val()
             losses.append(val_loss)
-            print('losses', losses)
             if epoch > self.__patience:
                 if losses[-1] > losses[epoch-self.__patience-1] \
                         and losses[-1] > losses[epoch-self.__patience]\
@@ -144,6 +144,7 @@ class Experiment(object):
     #  bleu scores using the best model. Use utility functions provided to you in caption_utils.
     #  Note than you'll need image_ids and COCO object in this case to fetch all captions to generate bleu scores.
     def test(self):
+        self.__load_experiment()
         self.__model.eval()
         test_loss = 0
         bleu1 = 0
@@ -209,10 +210,12 @@ class Experiment(object):
         plt.xlabel("Epochs")
         plt.legend(loc='best')
         plt.title(self.__name + " Stats Plot")
+        Path(self.__experiment_dir).mkdir(parents=True, exist_ok=True)
         plt.savefig(os.path.join(self.__experiment_dir, "stat_plot.png"))
         plt.show()
 
     def predict(self):
+        self.__load_experiment()
         self.__model.eval()
         i = 0
         with torch.no_grad():
@@ -220,10 +223,16 @@ class Experiment(object):
                 i = i + 1
                 if i == 3:
                     break
-                images = images.to(self.device)
-                outputs = self.__model.predict(images[0])
+                images = images.to(self.device)[:2]
+                captions = captions.to(self.device)[:2]
+                # images = images[i].unsqueeze(0)
+                outputs = self.__model.predict(images)
                 print(outputs)
-                print(self.__test_loader.dataset.to_caption(outputs))
-                plt.imshow(images[0].cpu().numpy().transpose(1, 2, 0))
-                plt.savefig('foo' + str(i) + '.png')
+                for i, caption in enumerate(outputs):
+                    caption = caption.cpu().numpy()
+                    print(self.__test_loader.dataset.to_caption(caption))
+                    plt.imshow(images[i].cpu().numpy().transpose(1, 2, 0))
+                    plt.savefig('foo' + str(i) + '.png')
+                # print(self.__test_loader.dataset.to_caption(outputs))
+
 

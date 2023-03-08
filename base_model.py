@@ -9,7 +9,7 @@ class Encoder(nn.Module):
         self.embed_size = embed_size
         self.freeze_encoder = freeze_encoder
         super(Encoder, self).__init__()
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(weights='ResNet50_Weights.DEFAULT')
 
         if self.freeze_encoder:
             for param in resnet.parameters():
@@ -36,8 +36,10 @@ class DecoderRNN(nn.Module):
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
 
+        self.num_layers = num_layers
+
         # lstm cell
-        self.lstm_cell = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers)
+        self.lstm_cell = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
 
         # output fully connected layer
         self.fc_out = nn.Linear(in_features=self.hidden_size, out_features=self.vocab_size)
@@ -59,48 +61,42 @@ class DecoderRNN(nn.Module):
         # define the output tensor placeholder
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         outputs = torch.empty((batch_size, captions.size(1), self.vocab_size))
-        outputs = outputs.to(device)
 
-        # embed the captions
-        captions_embed = self.embed(captions)
+        captions_embed = self.embed(captions[:, :-1])
+        cell_state = (torch.zeros((2, batch_size, self.hidden_size)).detach(),
+                      torch.zeros((2, batch_size, self.hidden_size)).detach())
 
-        # pass the caption word by word
-        for t in range(captions.size(1)):
+        inputs = torch.cat((features.unsqueeze(1), captions_embed), dim=1)
+        outputs, cell_state = self.lstm_cell(inputs, cell_state)
 
-            # for the first time step the input is the feature vector
-            if t == 0:
-                hidden_state, cell_state = self.lstm_cell(features)
 
-            # for the 2nd+ time step, using teacher forcer
-            else:
-                hidden_state, cell_state = self.lstm_cell(captions_embed[:, t, :])
-
-            # output of the attention mechanism
-            out = self.fc_out(hidden_state)
-
-            # build the output tensor
-            outputs[:, t, :] = out
+        outputs = self.fc_out(outputs)
 
         return outputs
 
     def predict(self, features, max_length=20):
-        final_output = []
+        # final_output = []
+        i=0
         # batch size
         batch_size = features.size(0)
+        predicted_captions = torch.zeros((batch_size, max_length))
 
+        cell_state = (torch.zeros((2, batch_size, self.hidden_size)).detach(),
+                      torch.zeros((2, batch_size, self.hidden_size)).detach())
         while True:
-            hidden_state, cell_state = self.lstm_cell(features)
+            hidden_state, cell_state = self.lstm_cell(features.unsqueeze(1), cell_state)
             out = self.fc_out(hidden_state)
-            out = out
-            out.squeeze_(1)
+            out = out.squeeze_(1)
+            pass
             _, max_idx = torch.max(out, dim=1)
-            final_output.extend(max_idx.cpu().numpy())
-            if len(final_output) >= max_length:
-                break
-
+            predicted_captions[:, i] = max_idx
+            # final_output.extend([max_idx.cpu().numpy()])
             features = self.embed(max_idx)
-            features = features.unsqueeze(1)
-        return final_output
+            # features = features.unsqueeze(1)
+            i+=1
+            if i >= max_length:
+                break
+        return predicted_captions
 
 
 class Encoder_Decoder(nn.Module):
@@ -115,7 +111,6 @@ class Encoder_Decoder(nn.Module):
         return outputs
 
     def predict(self, images):
-        images = images.unsqueeze(0)
         features = self.encoder(images)
         outputs = self.decoder.predict(features)
         return outputs
