@@ -125,9 +125,10 @@ class Experiment(object):
     def __val(self):
         self.__model.eval()
         val_loss = 0
-
+        bleu1 = 0
+        bleu4 = 0
         with torch.no_grad():
-            for i, (images, captions, _) in enumerate(self.__val_loader):
+            for i, (images, captions, img_ids) in enumerate(self.__val_loader):
                 images = images.to(self.device)
                 captions = captions.to(self.device)
 
@@ -137,6 +138,28 @@ class Experiment(object):
                 loss = self.__criterion(outputs, captions)
 
                 val_loss += loss.item()
+
+                output = self.__model.predict(images)
+                generated_captions = self.__test_loader.dataset.to_caption(output)
+                total_bleu1 = 0
+                total_bleu4 = 0
+                num_bleu = 0
+                for i in range(captions.size()[0]):
+                    test_captions = []
+                    for annotation in self.__coco_test.imgToAnns[img_ids[i]]:
+                        test_caption = annotation['caption']
+                        tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
+                        test_captions.append(tokenized)
+                    total_bleu1 += caption_utils.bleu1(test_captions, generated_captions[i])
+                    total_bleu4 += caption_utils.bleu4(test_captions, generated_captions[i])
+                    num_bleu += 1
+                bleu1 += total_bleu1 / num_bleu
+                bleu4 += total_bleu4 / num_bleu
+
+        result_str = "Test Performance:  Bleu1:{} , Bleu4:{} ".format( bleu1, bleu4)
+
+        self.__log(result_str)
+        self.predict()
         val_loss /= len(self.__val_loader)
         return val_loss
 
