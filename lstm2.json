@@ -9,12 +9,12 @@
     "images_root_dir": "./data/images/",
     "vocabulary_threshold": 2,
     "img_size": 256,
-    "batch_size": 128,
+    "batch_size": 64,
     "num_workers": 4
   },
   "experiment": {
-    "num_epochs": 200,
-    "learning_rate": 1e-3,
+    "num_epochs": 20,
+    "learning_rate": 1e-2,
     "save": true,
     "load": false
   },
