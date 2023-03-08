@@ -62,7 +62,7 @@ class RNNModel(nn.Module):
         """
         # encode images to rnn hidden state
         batch_size = images.size()[0]
-        hidden_states = self.resnetfc(self.resnet(images)) # (N, num_layers * hidden_size)
+        hidden_states = self.resnetfc(self.resnet(images).squeeze_()) # (N, num_layers * hidden_size)
         hidden_states = torch.reshape(hidden_states, (batch_size, self.num_layers, self.hidden_size))
         hidden_states = torch.permute(hidden_states, (1, 0, 2)) # (num_layers, batch_size, hidden_size)
         embedded = self.word_embedder(captions) # (N, seq len, embedding_size)

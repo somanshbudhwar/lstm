@@ -111,7 +111,7 @@ class Experiment(object):
             self.__record_stats(train_loss, val_loss)
             self.__log_epoch_stats(start_time)
             self.__save_model()
-        self.plot_stats()
+            self.plot_stats()
 
     def __train(self, epoch):
         self.__model.train()
