@@ -2,6 +2,7 @@ import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as TF
 import torch
+from torch.distributions import Categorical
 
 
 class Encoder(nn.Module):
@@ -35,6 +36,8 @@ class DecoderRNN(nn.Module):
         self.embed_size = embed_size
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
+        self.__temperature =0.1
+        self.__sampling = 'stochastic'
 
         self.num_layers = num_layers
 
@@ -87,8 +90,11 @@ class DecoderRNN(nn.Module):
             hidden_state, cell_state = self.lstm_cell(features.unsqueeze(1), cell_state)
             out = self.fc_out(hidden_state)
             out = out.squeeze_(1)
-            pass
-            _, max_idx = torch.max(out, dim=1)
+            if self.__sampling == 'deterministic':
+                _, max_idx = torch.max(out, dim=1)
+            else:
+                softmax = torch.nn.functional.softmax(out / self.__temperature, dim=1)
+                max_idx = Categorical(softmax).sample()
             predicted_captions[:, i] = max_idx
             # final_output.extend([max_idx.cpu().numpy()])
             features = self.embed(max_idx)
