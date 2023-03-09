@@ -76,7 +76,7 @@ class DecoderRNN(nn.Module):
 
             # for the 2nd+ time step, using teacher forcer
             else:
-                hidden_state, cell_state = self.lstm_cell(captions_embed[:, t, :])
+                hidden_state, cell_state = self.lstm_cell(captions_embed[:, t, :], cell_state)
 
             # output of the attention mechanism
             out = self.fc_out(hidden_state)
@@ -93,25 +93,30 @@ class DecoderRNN(nn.Module):
         batch_size = features.size(0)
         final_output = []
 
-
+        t = 0
         while True:
-            hidden_state, cell_state = self.lstm_cell(features)
+            if t == 0:
+                hidden_state, cell_state = self.lstm_cell(features)
+                t = t + 1
+            else:
+                hidden_state, cell_state = self.lstm_cell(features, cell_state)
             out = self.fc_out(hidden_state)
             out.squeeze_(1)
-            if deterministic: # deterministically sample from softmax
+            if deterministic:  # deterministically sample from softmax
                 # returns values, indices, we only want indices to decode using vocab
-                _, max_idx = torch.max(out, dim=1) # 1d array size N
-            else: # use temperature in softmax and sample
+                _, max_idx = torch.max(out, dim=1)  # 1d array size N
+            else:  # use temperature in softmax and sample
                 # calc softmax w/ temperature
-                softmax = torch.softmax(out / temperature, dim=1) # (N, vocab_size)
+                softmax = torch.softmax(out / temperature, dim=1)  # (N, vocab_size)
                 # sample softmax
-                max_idx = Categorical(softmax).sample() # 1d array size N
+                max_idx = Categorical(softmax).sample()  # 1d array size N
             final_output.append(max_idx)
             if len(final_output) >= max_length:
                 break
 
             features = self.embed(max_idx)
         return torch.stack(final_output).permute(1, 0)
+
 
 class Encoder_Decoder(nn.Module):
     def __init__(self, hidden_size, embedding_size, num_layers, model_type, vocab_size):
