@@ -10,7 +10,7 @@ class Encoder(nn.Module):
         self.embed_size = embed_size
         self.freeze_encoder = freeze_encoder
         super(Encoder, self).__init__()
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(weights='ResNet50_Weights.DEFAULT')
 
         if self.freeze_encoder:
             for param in resnet.parameters():
@@ -102,12 +102,9 @@ class DecoderRNN(nn.Module):
             out = self.fc_out(hidden_state)
             out.squeeze_(1)
             if deterministic:
-
                 _, max_idx = torch.max(out, dim=1)
             else:
-
                 softmax = torch.softmax(out / temperature, dim=1)
-
                 max_idx = Categorical(softmax).sample()
 
             final_output.append(max_idx)

@@ -10,7 +10,7 @@ class Encoder(nn.Module):
         self.embed_size = embed_size
         self.freeze_encoder = freeze_encoder
         super(Encoder, self).__init__()
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(weights='ResNet50_Weights.DEFAULT')
 
         if self.freeze_encoder:
             for param in resnet.parameters():
