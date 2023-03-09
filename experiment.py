@@ -123,6 +123,7 @@ class Experiment(object):
         for i, (images, captions, _) in enumerate(self.__train_loader):
             if self.example_img is None:
                 self.example_img = images[0]
+                display(self.example_img)
             # test code ignore
             # if not genned: # generate and print single example
             #     single_batch = torch.unsqueeze(images[0], 0)
@@ -139,7 +140,6 @@ class Experiment(object):
             # print(f'outputs: {outputs.size()}')
             # print(f'captions: {captions.size()}')
             loss = self.__criterion(outputs, captions)
-
             loss.backward()
             self.__optimizer.step()
 
