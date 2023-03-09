@@ -14,6 +14,8 @@ from dataset_factory import get_datasets
 from file_utils import *
 from model_factory import get_model
 
+from torchvision import transforms
+
 
 # Class to encapsulate a neural experiment.
 # The boilerplate code to setup the experiment, log stats, checkpoints and plotting have been provided to you.
@@ -46,7 +48,7 @@ class Experiment(object):
         self.__model = get_model(config_data, self.__vocab)
         self.example_img = None
 
-        # Criterion and Optimizers set 
+        # Criterion and Optimizers set
         self.__criterion = nn.CrossEntropyLoss()
         self.__optimizer = torch.optim.Adam(
             self.__model.parameters(),
@@ -96,6 +98,7 @@ class Experiment(object):
             print(" ".join(generated_captions[0]))
 
         # Main method to run your experiment. Should be self-explanatory.
+
     def run(self):
         start_epoch = self.__current_epoch
 
@@ -114,6 +117,17 @@ class Experiment(object):
             self.plot_stats()
         self.plot_stats(True)
 
+    def show_image(self, image):
+        image = image.to(self.device)
+        std = torch.tensor([0.229, 0.224, 0.225]).to(self.device)
+        mean = torch.tensor([0.485, 0.456, 0.406]).to(self.device)
+        image = image * std.view(3, 1, 1)
+        image = image + mean.view(3, 1, 1)
+        image = torch.reshape(image, (3, 256, 256))
+        image = image.to("cpu")
+        image = transforms.ToPILImage(mode='RGB')(image)
+        display(image)
+
     def __train(self, epoch):
         self.__model.train()
         training_loss = 0
@@ -123,7 +137,7 @@ class Experiment(object):
         for i, (images, captions, _) in enumerate(self.__train_loader):
             if self.example_img is None:
                 self.example_img = images[0]
-                display(self.example_img)
+                self.show_image(self.example_img)
             # test code ignore
             # if not genned: # generate and print single example
             #     single_batch = torch.unsqueeze(images[0], 0)
