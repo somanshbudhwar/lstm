@@ -209,15 +209,25 @@ class Experiment(object):
                 total_bleu1 = 0
                 total_bleu4 = 0
                 num_bleu = 0
+                max_bleu = -1
+                max_idx = -1
                 for i in range(captions.size()[0]):
                     test_captions = []
                     for annotation in self.__coco_test.imgToAnns[img_ids[i]]:
                         test_caption = annotation['caption']
                         tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
                         test_captions.append(tokenized)
-                    total_bleu1 += caption_utils.bleu1(test_captions, generated_captions[i])
+                    ex_bleu1 = caption_utils.bleu1(test_captions, generated_captions[i])
+                    if ex_bleu1 > max_bleu:
+                        max_bleu = ex_bleu1
+                        max_idx = i
+                    total_bleu1 += ex_bleu1
                     total_bleu4 += caption_utils.bleu4(test_captions, generated_captions[i])
                     num_bleu += 1
+                if iter % 10 == 0:
+                    self.show_image(images[max_idx])
+                    tqdm.write(f'Bleu1: {max_bleu}')
+                    tqdm.write(generated_captions[max_idx])
                 bleu1 += total_bleu1 / num_bleu
                 bleu4 += total_bleu4 / num_bleu
                 pbar.update(1)
