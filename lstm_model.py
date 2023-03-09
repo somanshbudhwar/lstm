@@ -118,8 +118,7 @@ class LSTMModel(nn.Module):
             # encode most recent word using vocab
             if iter == 0:
                 features = self.resnetfc(self.resnet(images).squeeze_())  # (N, embedding_size)
-                features = features.unsqueeze(dim=1) # (N, 1, embedding size)
-                embedded = self.word_embedder(features)
+                embedded = features.unsqueeze(dim=1) # (N, 1, embedding size)
             else:
                 last_words = torch.tensor([[self.vocab(ls[iter - 1])] for ls in captions]).to(images.device) # (N, seq_len=1)
                 # embed
