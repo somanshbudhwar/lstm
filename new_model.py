@@ -95,14 +95,14 @@ class DecoderRNN(nn.Module):
             hidden_state, cell_state = self.lstm_cell(features_concat)
             out = self.fc_out(hidden_state)
             out.squeeze_(1)
-            if deterministic: # deterministically sample from softmax
-                # returns values, indices, we only want indices to decode using vocab
-                _, max_idx = torch.max(out, dim=1) # 1d array size N
-            else: # use temperature in softmax and sample
-                # calc softmax w/ temperature
-                softmax = torch.softmax(out / temperature, dim=1) # (N, vocab_size)
-                # sample softmax
-                max_idx = Categorical(softmax).sample() # 1d array size N
+            if deterministic:
+
+                _, max_idx = torch.max(out, dim=1)
+            else:
+
+                softmax = torch.softmax(out / temperature, dim=1)
+
+                max_idx = Categorical(softmax).sample()
 
 
             final_output.append(max_idx)

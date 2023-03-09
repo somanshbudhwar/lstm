@@ -88,9 +88,9 @@ class Experiment(object):
             losses.append(val_loss)
             print('losses', losses)
             if epoch > self.__patience:
-                if losses[-1] > losses[epoch-self.__patience-1] \
-                        and losses[-1] > losses[epoch-self.__patience]\
-                        and losses[-1] > losses[epoch-self.__patience + 1]:
+                if losses[-1] > losses[epoch - self.__patience - 1] \
+                        and losses[-1] > losses[epoch - self.__patience] \
+                        and losses[-1] > losses[epoch - self.__patience + 1]:
                     print('early stopping')
                     break
             self.__record_stats(train_loss, val_loss)
@@ -125,8 +125,7 @@ class Experiment(object):
     def __val(self):
         self.__model.eval()
         val_loss = 0
-        bleu1 = 0
-        bleu4 = 0
+
         with torch.no_grad():
             for i, (images, captions, img_ids) in enumerate(self.__val_loader):
                 images = images.to(self.device)
@@ -139,29 +138,10 @@ class Experiment(object):
 
                 val_loss += loss.item()
 
-                output = self.__model.predict(images)
-                generated_captions = self.__val_loader.dataset.to_caption(output)
-                total_bleu1 = 0
-                total_bleu4 = 0
-                num_bleu = 0
-                for i in range(captions.size()[0]):
-                    test_captions = []
-                    for annotation in self.__coco_test.imgToAnns[img_ids[i]]:
-                        test_caption = annotation['caption']
-                        tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
-                        test_captions.append(tokenized)
-                    total_bleu1 += caption_utils.bleu1(test_captions, generated_captions[i])
-                    total_bleu4 += caption_utils.bleu4(test_captions, generated_captions[i])
-                    num_bleu += 1
-                bleu1 += total_bleu1 / num_bleu
-                bleu4 += total_bleu4 / num_bleu
-        bleu1 /= len(self.__val_loader)
-        bleu4 /= len(self.__val_loader)
         val_loss /= len(self.__val_loader)
-        result_str = "Test Performance: Loss: {}, Bleu1:{} , Bleu4:{} ".format(val_loss, bleu1, bleu4)
-
+        result_str = "validation Performance: Loss: {} ".format(val_loss)
+        self.test()
         self.__log(result_str)
-        self.predict()
 
         return val_loss
 
@@ -173,7 +153,7 @@ class Experiment(object):
         test_loss = 0
         bleu1 = 0
         bleu4 = 0
-
+        j=0
         with torch.no_grad():
             for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
                 images = images.to(self.device)
@@ -197,6 +177,10 @@ class Experiment(object):
                     total_bleu1 += caption_utils.bleu1(test_captions, generated_captions[i])
                     total_bleu4 += caption_utils.bleu4(test_captions, generated_captions[i])
                     num_bleu += 1
+                    if j < 5:
+                        j = j + 1
+                        print("Generated Caption: {}".format(generated_captions[i]))
+                        print("Reference Caption: {}".format(test_captions))
                 bleu1 += total_bleu1 / num_bleu
                 bleu4 += total_bleu4 / num_bleu
         bleu1 /= len(self.__test_loader)
@@ -205,7 +189,6 @@ class Experiment(object):
         result_str = "Test Performance: Loss: {}, Bleu1:{} , Bleu4:{} ".format(test_loss, bleu1, bleu4)
 
         self.__log(result_str)
-        self.predict()
         return test_loss, bleu1, bleu4
 
     def __save_model(self):
@@ -250,22 +233,4 @@ class Experiment(object):
         plt.title(self.__name + " Stats Plot")
         plt.savefig(os.path.join(self.__experiment_dir, "stat_plot.png"))
         plt.show()
-
-    def predict(self):
-        self.__model.eval()
-        i = 0
-        with torch.no_grad():
-            for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
-                i = i + 1
-                if i == 3:
-                    break
-                images = images.to(self.device)
-                outputs = self.__model.predict(images)
-                annotation = self.__coco_test.imgToAnns[img_ids[0]][0]
-                test_caption = annotation['caption']
-                tokenized = nltk.tokenize.word_tokenize(str(test_caption).lower())
-                print(tokenized)
-                print(self.__test_loader.dataset.to_caption(outputs)[0])
-                plt.imshow(images[0].cpu().numpy().transpose(1, 2, 0))
-                plt.savefig('foo' + str(i) + '.png')
 
