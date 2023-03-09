@@ -2,6 +2,7 @@ import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as TF
 import torch
+from torch.distributions import Categorical
 
 
 class Encoder(nn.Module):
@@ -85,28 +86,32 @@ class DecoderRNN(nn.Module):
 
         return outputs
 
-    def predict(self, features, max_length=20):
-        final_outputs = []
+    def predict(self, features, max_length=20, deterministic=False, temperature=1.0):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         # batch size
         batch_size = features.size(0)
-        for i in range(batch_size):
-            features = features[i, :].unsqueeze(0)
-            final_output = []
-            while True:
-                hidden_state, cell_state = self.lstm_cell(features)
-                out = self.fc_out(hidden_state)
-                out = out
-                out.squeeze_(1)
-                _, max_idx = torch.max(out, dim=1)
-                final_output.extend(max_idx.cpu().numpy())
-                if len(final_output) >= max_length:
-                    break
+        final_output = []
 
-                features = self.embed(max_idx)
-                features = features.unsqueeze(1)
-            final_outputs.append(final_output)
-        return final_outputs
 
+        while True:
+            hidden_state, cell_state = self.lstm_cell(features)
+            out = self.fc_out(hidden_state)
+            out.squeeze_(1)
+            if deterministic: # deterministically sample from softmax
+                # returns values, indices, we only want indices to decode using vocab
+                _, max_idx = torch.max(out, dim=1) # 1d array size N
+            else: # use temperature in softmax and sample
+                # calc softmax w/ temperature
+                softmax = torch.softmax(out / temperature, dim=1) # (N, vocab_size)
+                # sample softmax
+                max_idx = Categorical(softmax).sample() # 1d array size N
+            final_output.append(max_idx)
+            if len(final_output) >= max_length:
+                break
+
+            features = self.embed(max_idx)
+        return torch.stack(final_output).permute(1, 0)
 
 class Encoder_Decoder(nn.Module):
     def __init__(self, hidden_size, embedding_size, num_layers, model_type, vocab_size):
@@ -120,7 +125,6 @@ class Encoder_Decoder(nn.Module):
         return outputs
 
     def predict(self, images):
-        images = images.unsqueeze(0)
         features = self.encoder(images)
         outputs = self.decoder.predict(features)
         return outputs

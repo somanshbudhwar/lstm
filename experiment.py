@@ -140,7 +140,7 @@ class Experiment(object):
                 val_loss += loss.item()
 
                 output = self.__model.predict(images)
-                generated_captions = self.__test_loader.dataset.to_caption(output)
+                generated_captions = self.__val_loader.dataset.to_caption(output)
                 total_bleu1 = 0
                 total_bleu4 = 0
                 num_bleu = 0
@@ -155,12 +155,14 @@ class Experiment(object):
                     num_bleu += 1
                 bleu1 += total_bleu1 / num_bleu
                 bleu4 += total_bleu4 / num_bleu
-
-        result_str = "Test Performance:  Bleu1:{} , Bleu4:{} ".format( bleu1, bleu4)
+        bleu1 /= len(self.__val_loader)
+        bleu4 /= len(self.__val_loader)
+        val_loss /= len(self.__val_loader)
+        result_str = "Test Performance: Loss: {}, Bleu1:{} , Bleu4:{} ".format(val_loss, bleu1, bleu4)
 
         self.__log(result_str)
         self.predict()
-        val_loss /= len(self.__val_loader)
+
         return val_loss
 
     # Implement your test function here. Generate sample captions and evaluate loss and
@@ -197,7 +199,9 @@ class Experiment(object):
                     num_bleu += 1
                 bleu1 += total_bleu1 / num_bleu
                 bleu4 += total_bleu4 / num_bleu
-
+        bleu1 /= len(self.__test_loader)
+        bleu4 /= len(self.__test_loader)
+        test_loss /= len(self.__test_loader)
         result_str = "Test Performance: Loss: {}, Bleu1:{} , Bleu4:{} ".format(test_loss, bleu1, bleu4)
 
         self.__log(result_str)
