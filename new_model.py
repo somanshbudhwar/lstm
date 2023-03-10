@@ -43,7 +43,7 @@ class DecoderRNN(nn.Module):
         # elif model_type == 'RNN':
         #     self.lstm_cell = nn.RNN(input_size=2*embed_size, hidden_size=hidden_size, num_layers=num_layers)
         # output fully connected layer
-        self.lstm_cell = nn.LSTM(input_size=2 * embed_size, hidden_size=hidden_size, num_layers=num_layers)
+        self.lstm_cell = nn.LSTM(input_size=2 * embed_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
         self.fc_out = nn.Linear(in_features=self.hidden_size, out_features=self.vocab_size)
 
         # embedding layer
@@ -84,7 +84,9 @@ class DecoderRNN(nn.Module):
 
         return outputs
 
-    def predict(self, features, max_length=20, deterministic=False, temperature=1.0):
+
+
+    def predict(self, features, max_length=20, deterministic=True, temperature=1.0):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # batch size
@@ -119,6 +121,39 @@ class DecoderRNN(nn.Module):
 
         return torch.stack(final_output).permute(1, 0)
 
+    def predict_teacher_forcing(self, features, captions):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # batch size
+        batch_size = features.size(0)
+
+        # init the hidden and cell states to zeros
+        # hidden_state = torch.zeros((batch_size, self.hidden_size)).cuda()
+        # cell_state = torch.zeros((batch_size, self.hidden_size)).cuda()
+        padding = torch.zeros(batch_size, 1, dtype=torch.long).to(device)
+        captions = torch.cat((padding, captions), dim=1)
+        # define the output tensor placeholder
+
+        outputs = torch.empty((batch_size, (captions.size(1) - 1), self.vocab_size))
+        outputs = outputs.to(device)
+
+        # embed the captions
+        captions_embed = self.embed(captions)
+
+        # pass the caption word by word
+        for t in range(captions.size(1) - 1):
+            if t == 0:
+                hidden_state, cell_state = self.lstm_cell(torch.concat((captions_embed[:, t, :], features), 1))
+            else:
+                hidden_state, cell_state = self.lstm_cell(torch.concat((captions_embed[:, t, :], features), 1),
+                                                          cell_state)
+            # output of the attention mechanism
+            out = self.fc_out(hidden_state)
+
+            # build the output tensor
+            outputs[:, t, :] = out
+        outputs = torch.argmax(outputs, dim=2)
+        return outputs
+
 
 class Encoder_Decoder_new(nn.Module):
     def __init__(self, hidden_size, embedding_size, num_layers, model_type, vocab_size):
@@ -135,4 +170,10 @@ class Encoder_Decoder_new(nn.Module):
         images = images
         features = self.encoder(images)
         outputs = self.decoder.predict(features)
+        return outputs
+
+    def predict_teacher_forcing(self, images, captions):
+        images = images
+        features = self.encoder(images)
+        outputs = self.decoder.predict_teacher_forcing(features, captions)
         return outputs
