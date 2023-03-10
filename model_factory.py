@@ -1,6 +1,7 @@
 from base_model import BaselineEncoderDecoder
 # Build and return the model here based on the configuration.
 from lstm_model import LSTMModel
+from new_model import Encoder_Decoder_new
 from rnn_model import RNNModel
 
 
@@ -18,6 +19,8 @@ def get_model(config_data, vocab):
         model = LSTMModel(embedding_size, hidden_size, vocab, num_layers)
     elif model_type == "rnn":
         model = RNNModel(embedding_size, hidden_size, vocab, num_layers)
+    elif model_type == "arch2":
+        model = Encoder_Decoder_new(hidden_size, embedding_size, num_layers, model_type, vocab)
     else:
         model = LSTMModel(embedding_size, hidden_size, vocab, num_layers)
     return model
