@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from datetime import datetime
 
+from IPython.core.display_functions import display
 from tqdm import tqdm
 
 import caption_utils
@@ -51,7 +52,7 @@ class Experiment(object):
         # Criterion and Optimizers set
         self.__criterion = nn.CrossEntropyLoss()
         self.__optimizer = torch.optim.Adam(
-            self.__model.parameters(),
+            params=self.__model.parameters(),
             lr=config_data['experiment']['learning_rate'],
         )
 
@@ -155,9 +156,9 @@ class Experiment(object):
             # print(f'captions: {captions.size()}')
             loss = self.__criterion(outputs, captions)
             loss.backward()
-            self.__optimizer.step()
 
             training_loss += loss.item()
+            self.__optimizer.step()
             pbar.update(1)
         # avg training loss
         training_loss /= len(self.__train_loader)
