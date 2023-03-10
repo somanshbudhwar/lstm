@@ -20,13 +20,13 @@
   "model": {
     "hidden_size": 512,
     "embedding_size": 300,
-    "model_type": "LSTM",
+    "model_type": "Laa",
     "num_layers": 2,
     "keep_image": false
   },
   "generation": {
     "max_length": 20,
-    "deterministic": false,
-    "temperature": 0.1
+    "deterministic": true,
+    "temperature": 1
   }
 }

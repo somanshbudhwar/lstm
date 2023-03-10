@@ -163,10 +163,10 @@ class Encoder_Decoder_new(nn.Module):
         outputs = self.decoder(features, captions)
         return outputs
 
-    def predict(self, images):
+    def predict(self, images, max_length=20, deterministic=True, temperature=1.0):
         images = images
         features = self.encoder(images)
-        outputs = self.decoder.predict(features)
+        outputs = self.decoder.predict(features, max_length, deterministic, temperature)
         return outputs
 
     def predict_teacher_forcing(self, images, captions):

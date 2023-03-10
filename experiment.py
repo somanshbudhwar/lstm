@@ -163,7 +163,7 @@ class Experiment(object):
                 output = torch.permute(output, (0, 2, 1))
                 loss = self.__criterion(output, captions)
                 test_loss = test_loss + loss
-                output = self.__model.predict(images)
+                output = self.__model.predict(images, self.__generation_config["max_length"], self.__generation_config['deterministic'], self.__generation_config['temperature'])
                 generated_captions = self.__test_loader.dataset.to_caption(output)
                 total_bleu1 = 0
                 total_bleu4 = 0
@@ -190,6 +190,22 @@ class Experiment(object):
 
         self.__log(result_str)
         return test_loss, bleu1, bleu4
+
+    def save_3_predictions(self):
+        # Get first 3 images from the test loader
+        for iter, (images, captions, img_ids) in enumerate(self.__test_loader):
+            images_3 = images[:3]
+            self.__model.eval()
+            images_3 = images_3.to(self.device)
+            output = self.__model.predict(images_3, self.__generation_config["max_length"], self.__generation_config['deterministic'], self.__generation_config['temperature'])
+            generated_captions = self.__test_loader.dataset.to_caption(output)
+        for i in range(3):
+            plt.imshow(images_3[i].cpu().numpy().transpose(1, 2, 0))
+            plt.title(generated_captions[i])
+            plt.savefig(os.path.join(self.__experiment_dir, 'prediction_{}.png'.format(i)))
+            plt.show()
+
+
 
     def __save_model(self):
         root_model_path = os.path.join(self.__experiment_dir, 'latest_model.pt')

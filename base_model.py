@@ -39,9 +39,11 @@ class DecoderRNN(nn.Module):
 
         # lstm cell
         if model_type == 'LSTM':
-            self.lstm_cell = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+            self.lstm_cell = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers,
+                                     batch_first=True)
         elif model_type == 'RNN':
-            self.lstm_cell = nn.RNN(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+            self.lstm_cell = nn.RNN(input_size=embed_size, hidden_size=hidden_size, num_layers=num_layers,
+                                    batch_first=True)
         # output fully connected layer
         self.fc_out = nn.Linear(in_features=self.hidden_size, out_features=self.vocab_size)
 
@@ -54,7 +56,6 @@ class DecoderRNN(nn.Module):
 
         # batch size
         batch_size = features.size(0)
-
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -85,7 +86,7 @@ class DecoderRNN(nn.Module):
             if deterministic:  # deterministically sample from softmax
                 _, max_idx = torch.max(out, dim=1)
             else:
-                softmax = torch.nn.functional.softmax(out / self.__temperature, dim=1)
+                softmax = torch.nn.functional.softmax(out / temperature, dim=1)
                 max_idx = Categorical(softmax).sample()
             predicted_captions[:, t] = max_idx
             # final_output.extend([max_idx.cpu().numpy()])
@@ -95,7 +96,6 @@ class DecoderRNN(nn.Module):
             if t >= max_length:
                 break
         return predicted_captions
-
 
 
 class Encoder_Decoder(nn.Module):
@@ -109,7 +109,7 @@ class Encoder_Decoder(nn.Module):
         outputs = self.decoder(features, captions)
         return outputs
 
-    def predict(self, images):
+    def predict(self, images, max_length=20, deterministic=True, temperature=1.0):
         features = self.encoder(images)
-        outputs = self.decoder.predict(features)
+        outputs = self.decoder.predict(features, max_length, deterministic, temperature)
         return outputs
